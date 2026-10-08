@@ -1,0 +1,30 @@
+# jetbot:extra-humble-amd64-host  (ПК, amd64)
+# Запуск: xhost +local: ; docker compose up -d ; docker compose exec extra-humble-amd64-host bash ; docker compose down
+# Образ собирай скриптом ./build_image.sh (он подставляет коммит из .env).
+services:
+  extra-humble-amd64-host:
+    image: jetbot:extra-humble-amd64-host
+    container_name: jetbot-extra-humble-amd64-host
+    build:
+      context: .
+      args:
+        BASE_IMAGE: ros2:base-humble-amd64   # образ из репозитория ros2-base-images (или собирай через ./build_image.sh: он умеет брать базу из реестра)
+        REPO_URL: ${REPO_URL}
+        REPO_COMMIT: ${REPO_COMMIT}
+        BUILD_JOBS: ${BUILD_JOBS:-4}
+    # runtime: nvidia         # раскомментируй для Gazebo на видеокарте NVIDIA (нужен nvidia-container-toolkit)
+    network_mode: host          # ноды видят робота и сеть без проброса портов (DDS)
+    ipc: host
+    privileged: true
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    environment:
+      - DISPLAY=${DISPLAY:-:0}          # окна Gazebo, RViz и Tk-GUI на экране хоста
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+      - ./src:/developer_ws/src                 # твой код поверх jetbot_ws
+      - ./files_to_container:/files_to_container
+      - ./ros2_custom_config_setup:/ros2_custom_config_setup

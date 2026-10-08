@@ -1,0 +1,44 @@
+# jetbot:extra-humble-arm64-robot  (робот jetbot, arm64)
+# Запуск: docker compose up -d ; docker compose exec extra-humble-arm64-robot bash ; docker compose down
+# Сразу запустить драйверы (ESP32, лидар, камера): docker compose --profile bringup up bringup
+# Образ собирай скриптом ./build_image.sh (он подставляет коммит из .env).
+x-robot: &robot
+  image: jetbot:extra-humble-arm64-robot
+  network_mode: host          # DDS-обмен с ПК без NAT
+  ipc: host
+  privileged: true            # доступ к /dev (ESP32, лидар, камера) с горячим подключением
+  runtime: ${DOCKER_RUNTIME:-runc}
+  stdin_open: true
+  tty: true
+  volumes:
+    - /run/udev:/run/udev:ro
+    - /dev:/dev
+    - ./src:/developer_ws/src                 # твой код поверх jetbot_ws
+    - ./files_to_container:/files_to_container
+    - ./ros2_custom_config_setup:/ros2_custom_config_setup
+
+services:
+  extra-humble-arm64-robot:
+    <<: *robot
+    container_name: jetbot-extra-humble-arm64-robot
+    build:
+      context: .
+      args:
+        BASE_IMAGE: ros2:base-humble-arm64   # образ из репозитория ros2-base-images (или собирай через ./build_image.sh: он умеет брать базу из реестра)
+        REPO_URL: ${REPO_URL}
+        REPO_COMMIT: ${REPO_COMMIT}
+        BUILD_JOBS: ${BUILD_JOBS:-2}
+        WITH_NAV2: ${WITH_NAV2:-0}
+    restart: unless-stopped
+
+  bringup:
+    <<: *robot
+    profiles: ["bringup"]
+    container_name: jetbot-extra-humble-arm64-robot-bringup
+    restart: "no"
+    command:
+      - ros2
+      - launch
+      - completed_scripts_jetbot
+      - jetbot_sensors_and_motors.launch.py
+      - enable_front_camera:=${ENABLE_CAMERA:-False}
