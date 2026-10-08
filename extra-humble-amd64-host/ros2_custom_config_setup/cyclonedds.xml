@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Конфиг CycloneDDS 0.10 образа base-humble-amd64.
+  Конфиг CycloneDDS 0.10 образа base-humble-arm64.
   Лежит на хосте, монтируется в контейнер в /ros2_custom_config_setup/cyclonedds.xml
   и подключается в setup.sh через CYCLONEDDS_URI.
 
@@ -24,14 +24,29 @@
       </Interfaces>
 
       <!-- default = мультикаст только для обнаружения нод на Wi-Fi и для всего на кабеле.
-           false = без мультикаста вообще, тогда нужен блок <!-- Если мультикаст между ПК и роботом не ходит, раскомментируй <Peers> и впиши IP
-             другой стороны (на ПК: IP робота, на роботе: IP ПК).
-        <Peers>
-          <Peer address="localhost"/>
-          <Peer address="192.168.55.100"/>
-        </Peers>
-        -->
+           false = без мультикаста вообще, тогда нужен блок <Peers> ниже. -->
+      <AllowMulticast>default</AllowMulticast>
+    </General>
+
+    <!-- Большой буфер приёма сокета: важно для видео.
+         ВКЛЮЧАЙ ТОЛЬКО ПОСЛЕ увеличения net.core.rmem_max на хосте Jetson (см. README),
+         иначе ноды не запустятся с ошибкой «failed to increase socket receive buffer size».
+    <Internal>
+      <SocketReceiveBufferSize min="10MB"/>
+    </Internal>
+    -->
+
+    <!-- Обнаружение нод по unicast, если сеть режет мультикаст.-->
+    <!--
+    <Discovery>
+      <ParticipantIndex>auto</ParticipantIndex>
+      <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
+      <Peers>
+        <Peer address="localhost"/>
+        <Peer address="192.168.123.15"/>
+      </Peers>
     </Discovery>
+    -->
 
     <!-- Отладка: при старте ноды CycloneDDS напишет выбранные интерфейсы и настройки.
     <Tracing>
