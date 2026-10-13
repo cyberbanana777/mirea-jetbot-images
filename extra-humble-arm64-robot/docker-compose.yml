@@ -1,21 +1,24 @@
-# jetbot:extra-humble-arm64-robot  (робот jetbot, arm64)
+# registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot  (робот jetbot, arm64)
 # Запуск: docker compose up -d ; docker compose exec extra-humble-arm64-robot bash ; docker compose down
 # Сразу запустить драйверы (ESP32, лидар, камера): docker compose --profile bringup up bringup
-# Образ собирай скриптом ./build_image.sh (он подставляет коммит из .env).
+# Версия образа и базы, коммит репозитория, HOST_UID/HOST_GID берутся из .env (./set_host_ids.sh).
 x-robot: &robot
-  image: jetbot:extra-humble-arm64-robot
+  image: registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:${VERSION:-v1.0.1}
   network_mode: host          # DDS-обмен с ПК без NAT
   ipc: host
   privileged: true            # доступ к /dev (ESP32, лидар, камера) с горячим подключением
   runtime: ${DOCKER_RUNTIME:-runc}
   stdin_open: true
   tty: true
+  environment:
+    HOST_UID: ${HOST_UID:-1000}   # UID/GID пользователя ros = хостовые
+    HOST_GID: ${HOST_GID:-1000}
   volumes:
     - /run/udev:/run/udev:ro
     - /dev:/dev
-    - ./src:/developer_ws/src                 # твой код поверх jetbot_ws
-    - ./files_to_container:/files_to_container
-    - ./ros2_custom_config_setup:/ros2_custom_config_setup
+    - ./user_data/developer_ws:/home/ros/developer_ws                       # твой код поверх jetbot_ws
+    - ./user_data/extra_files_to_container:/home/ros/extra_files_to_container
+    - ./user_data/ros2_custom_config_setup:/home/ros/ros2_custom_config_setup
 
 services:
   extra-humble-arm64-robot:
@@ -24,7 +27,7 @@ services:
     build:
       context: .
       args:
-        BASE_IMAGE: ros2:base-humble-arm64   # образ из репозитория ros2-base-images (или собирай через ./build_image.sh: он умеет брать базу из реестра)
+        BASE_IMAGE: registry.cookcloud.ru/base_images/ros2-base-humble-arm64:${BASE_VERSION:-v1.0.1}
         REPO_URL: ${REPO_URL}
         REPO_COMMIT: ${REPO_COMMIT}
         BUILD_JOBS: ${BUILD_JOBS:-2}

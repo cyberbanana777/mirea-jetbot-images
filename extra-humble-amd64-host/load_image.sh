@@ -2,4 +2,5 @@
 # Загрузка образа из файла: ./load_image.sh
 set -euo pipefail
 cd "$(dirname "$0")"
-sudo docker load -i "jetbot-extra-humble-amd64-host.tar"
+source .env
+sudo docker load -i "extra-humble-amd64-host-${VERSION}.tar"

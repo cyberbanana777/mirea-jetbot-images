@@ -2,6 +2,7 @@
 # Сохранение образа в файл для переноса на другое устройство: ./save_image.sh
 set -euo pipefail
 cd "$(dirname "$0")"
-sudo docker save "jetbot:extra-humble-arm64-robot" -o "jetbot-extra-humble-arm64-robot.tar"
-sudo chown "$(id -u):$(id -g)" "jetbot-extra-humble-arm64-robot.tar"
-echo "Сохранено: jetbot-extra-humble-arm64-robot.tar"
+source .env
+sudo docker save "registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:${VERSION}" -o "extra-humble-arm64-robot-${VERSION}.tar"
+sudo chown "$(id -u):$(id -g)" "extra-humble-arm64-robot-${VERSION}.tar"
+echo "Сохранено: extra-humble-arm64-robot-${VERSION}.tar"
