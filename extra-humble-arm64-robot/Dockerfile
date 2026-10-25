@@ -53,17 +53,18 @@ LABEL jetbot.repo.url="${REPO_URL}" jetbot.repo.commit="${REPO_COMMIT}"
 
 # Сборка (на Jetson/arm64 с малой памятью BUILD_JOBS оставь 2 или 1; симуляционные пакеты пропускаем)
 RUN bash -c 'set -eo pipefail; source /opt/ros/humble/setup.bash; cd /jetbot_ws; \
-    export MAKEFLAGS="-j${BUILD_JOBS}"; \
     colcon build --parallel-workers "${BUILD_JOBS}" --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-skip realsense_ros_gazebo trajectory_maker'
 
 # jetbot_mirea_description подключает /usr/share/gazebo/setup.sh; без проверки это обрывает entrypoint (set -e)
 RUN find /jetbot_ws/install -type f -name 'jetbot_mirea_description_model_path.*' \
         -exec sed -i 's#^source /usr/share/gazebo/setup.sh#if [ -f /usr/share/gazebo/setup.sh ]; then . /usr/share/gazebo/setup.sh; fi#' {} +
 
-# Проверка: если какого-то пакета нет в окружении, образ не соберётся
+# Проверка: если какого-то пакета нет в окружении, образ не соберётся.
+# Пакеты репозитория на коммитах с d8f5a6a (C++-мост и фильтр лидара, конфиги D435i, веб-настройщик ПИД).
 RUN bash -c 'set -eo pipefail; source /opt/ros/humble/setup.bash; source /jetbot_ws/install/setup.bash; \
-    for p in serial_bridge_package sllidar_ros2 lidar_filter realsense_pkg completed_scripts_jetbot jetbot_mirea_description realsense2_camera rmw_cyclonedds_cpp; do \
-        ros2 pkg prefix "$p" > /dev/null || { echo "ОШИБКА: пакет $p не найден"; exit 1; }; \
+    for p in serial_bridge_cpp lidar_filter_cpp sllidar_ros2 realsense_d435i_configs web_regulators_configurator completed_scripts_jetbot jetbot_mirea_description \
+             realsense2_camera rmw_cyclonedds_cpp; do \
+        ros2 pkg prefix "$p" > /dev/null || { echo "ОШИБКА: пакет $p не найден (коммит $(cat /jetbot_ws/COMMIT))"; exit 1; }; \
     done; echo "Все пакеты на месте"'
 
 # Возвращаем root: entrypoint базового образа стартует от root, подгоняет UID/GID и переходит на ros.

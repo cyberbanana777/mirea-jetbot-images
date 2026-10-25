@@ -4,18 +4,33 @@
 
 | Папка | Образ | Версия | Ubuntu | Железо | Что внутри |
 |---|---|---|---|---|---|
-| `extra-humble-amd64-host` | `registry.cookcloud.ru/jetbot_mirea/extra-humble-amd64-host` | v1.0.1 | 22.04 | ПК, amd64 | `ros2-base-humble-amd64` + mirea_jetbot_full + Gazebo, Nav2, slam-toolbox, RViz, Tk-GUI |
-| `extra-humble-arm64-robot` | `registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot` | v1.0.1 | 22.04 | робот jetbot, arm64 | `ros2-base-humble-arm64` + mirea_jetbot_full, приводной уровень (ESP32, лидар, RealSense) |
+| `extra-humble-amd64-host` | `registry.cookcloud.ru/jetbot_mirea/extra-humble-amd64-host` | v1.0.2 | 22.04 | ПК, amd64 | `ros2-base-humble-amd64` + mirea_jetbot_full + Gazebo, Nav2, slam-toolbox, RViz, Tk-GUI |
+| `extra-humble-arm64-robot` | `registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot` | v1.0.2 | 22.04 | робот jetbot, arm64 | `ros2-base-humble-arm64` + mirea_jetbot_full, приводной уровень (ESP32, лидар, RealSense), веб-настройщик ПИД |
+
+Оба образа v1.0.2 собраны на коммите `d8f5a6a` репозитория mirea_jetbot_full. ПК и робот должны работать на одном коммите: иначе могут не совпасть топики и форматы сообщений.
 
 Версия каждого образа хранится в `.env` его папки (`VERSION`), история изменений в `CHANGELOG.md` там же. Таблица выше показывает актуальные версии: при выпуске новой её нужно обновить.
+
+## Что нового в v1.0.2
+
+Образы переведены на коммит `d8f5a6a`, где ПО робота переписано для меньшей нагрузки на процессор Jetson Nano:
+
+- связь с ESP32 и фильтр лидара — C++-пакеты `serial_bridge_cpp` и `lidar_filter_cpp` вместо Python-пакетов `serial_bridge_package` и `lidar_filter` (прежний мост держал одно ядро на 100 %);
+- одометрия от ESP32 приходит с частотой 50 Гц вместо 10 Гц; в `/odom` заполнены ковариации;
+- камера D435i запускается из `realsense_d435i_configs` с выбором пресета (`camera_mode`, по умолчанию `rgb_depth_pointcloud`) вместо `realsense_pkg`;
+- веб-настройщик ПИД `web_regulators_configurator`: работает на роботе, страница открывается в браузере на `http://<IP робота>:8080`;
+- сообщения прошивки ESP32 видны в ROS: топик `/low_level/serial/text`;
+- прошивка ESP32 2.2.0: без OTA, аварийная остановка через 1 с без команд (прошивается отдельно, по USB; в образы не входит).
+
+В Dockerfile обоих образов — проверка, что после сборки на месте все пакеты нового состава. В образе робота устройства пробрасываются по отдельности (ESP32 и лидар по `by-id`, камера), а не весь `/dev`. Подробности — в `CHANGELOG.md` каждого образа.
 
 ## Готовые образы
 
 Образы лежат в реестре `registry.cookcloud.ru` (при необходимости `docker login registry.cookcloud.ru`):
 
 ```bash
-docker pull registry.cookcloud.ru/jetbot_mirea/extra-humble-amd64-host:v1.0.1   # ПК
-docker pull registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:v1.0.1    # робот
+docker pull registry.cookcloud.ru/jetbot_mirea/extra-humble-amd64-host:v1.0.2   # ПК
+docker pull registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:v1.0.2    # робот
 ```
 
 ## Структура
@@ -46,6 +61,8 @@ docker pull registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:v1.0.1  
 ./extra-humble-amd64-host/build_image.sh [коммит]    # ПК
 ./extra-humble-arm64-robot/build_image.sh [коммит]     # робот
 ```
+
+Образ робота собирается через `docker buildx --platform linux/arm64`, поэтому его можно собрать на ноутбуке amd64 (нужна эмуляция arm64, см. README образа) и отправить в реестр — это быстрее, чем на Nano.
 
 Коммит берётся из аргумента, иначе из `REPO_COMMIT` в `.env`. Выпуск новой версии: поменять `VERSION` в `.env`, добавить запись в `CHANGELOG.md`, обновить таблицу выше, затем собрать и отправить образ:
 

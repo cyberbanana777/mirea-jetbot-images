@@ -3,6 +3,17 @@
 Формат: [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии `vMAJOR.MINOR.PATCH`.
 Версия образа хранится в `.env` (`VERSION`).
 
+## [v1.0.2] — 2026-10-25
+
+Образ: `registry.cookcloud.ru/jetbot_mirea/extra-humble-amd64-host:v1.0.2`. База: `registry.cookcloud.ru/base_images/ros2-base-humble-amd64:v1.0.1`.
+
+### Изменено
+- Репозиторий mirea_jetbot_full на коммите `d8f5a6a` (было `5c048a1`): C++-пакеты `serial_bridge_cpp` и `lidar_filter_cpp` вместо Python-пакетов `serial_bridge_package` и `lidar_filter`, `realsense_d435i_configs` вместо `realsense_pkg`, веб-настройщик ПИД `web_regulators_configurator`, одометрия 50 Гц, топик `/low_level/serial/text` с сообщениями прошивки ESP32.
+- Проверка пакетов после сборки обновлена под новый состав: пакеты робота (`serial_bridge_cpp`, `lidar_filter_cpp`, `sllidar_ros2`, `realsense_d435i_configs`, `web_regulators_configurator`, `completed_scripts_jetbot`, `jetbot_mirea_description`), `realsense_ros_gazebo`, `trajectory_maker`, `nav2_bringup`, `slam_toolbox`, `gazebo_ros`, `rmw_cyclonedds_cpp`. Прежняя проверка искала удалённые `serial_bridge_package`, `lidar_filter`, `realsense_pkg`, и сборка на новом коммите падала.
+
+### Удалено
+- Проверка необязательного пакета `simple_regulators_configurator_pkg`: его в репозитории больше нет. Tk-GUI `simple_PID_configurator` — скрипт, а не ROS-пакет; его зависимости остаются в образе.
+
 ## [v1.0.1] — 2026-10-13
 
 Образ: `registry.cookcloud.ru/jetbot_mirea/extra-humble-amd64-host:v1.0.1`. База: `registry.cookcloud.ru/base_images/ros2-base-humble-amd64:v1.0.1`.

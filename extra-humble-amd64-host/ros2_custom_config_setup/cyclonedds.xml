@@ -12,7 +12,7 @@
     <General>
       <Interfaces>
         <!-- По умолчанию CycloneDDS выбирает интерфейс сам. -->
-        <NetworkInterface autodetermine="true" priority="default" multicast="default"/>
+        <NetworkInterface name="wlp0s20f3" priority="default" multicast="default"/>
 
         <!-- Явный выбор интерфейсов (можно несколько): закомментируй строку выше
              и раскомментируй нужные. Список интерфейсов Jetson: ip -br a
@@ -37,16 +37,14 @@
     -->
 
     <!-- Обнаружение нод по unicast, если сеть режет мультикаст.-->
-    <!--
     <Discovery>
       <ParticipantIndex>auto</ParticipantIndex>
       <MaxAutoParticipantIndex>100</MaxAutoParticipantIndex>
       <Peers>
         <Peer address="localhost"/>
-        <Peer address="192.168.123.15"/>
+        <Peer address="192.168.0.102"/>
       </Peers>
     </Discovery>
-    -->
 
     <!-- Отладка: при старте ноды CycloneDDS напишет выбранные интерфейсы и настройки.
     <Tracing>

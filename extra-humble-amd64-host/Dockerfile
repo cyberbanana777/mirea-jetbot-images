@@ -57,15 +57,13 @@ RUN bash -c 'set -eo pipefail; source /opt/ros/humble/setup.bash; cd /jetbot_ws;
 RUN find /jetbot_ws/install -type f -name 'jetbot_mirea_description_model_path.*' \
         -exec sed -i 's#^source /usr/share/gazebo/setup.sh#if [ -f /usr/share/gazebo/setup.sh ]; then . /usr/share/gazebo/setup.sh; fi#' {} +
 
-# Проверка: обязательных пакетов нет в окружении — образ не соберётся; необязательных — только предупреждение
+# Проверка: если какого-то пакета нет в окружении, образ не соберётся.
+# Пакеты репозитория на коммитах с d8f5a6a (C++-мост и фильтр лидара, конфиги D435i, веб-настройщик ПИД).
 RUN bash -c 'set -eo pipefail; source /opt/ros/humble/setup.bash; source /jetbot_ws/install/setup.bash; \
-    for p in serial_bridge_package sllidar_ros2 lidar_filter realsense_pkg completed_scripts_jetbot jetbot_mirea_description realsense_ros_gazebo trajectory_maker nav2_bringup slam_toolbox gazebo_ros rmw_cyclonedds_cpp; do \
-        ros2 pkg prefix "$p" > /dev/null || { echo "ОШИБКА: пакет $p не найден"; exit 1; }; \
-    done; \
-    for p in simple_regulators_configurator_pkg; do \
-        ros2 pkg prefix "$p" > /dev/null 2>&1 && echo "Есть необязательный пакет: $p" || echo "ПРЕДУПРЕЖДЕНИЕ: на коммите $(cat /jetbot_ws/COMMIT) нет необязательного пакета $p"; \
-    done; \
-    echo "Все обязательные пакеты на месте"'
+    for p in serial_bridge_cpp lidar_filter_cpp sllidar_ros2 realsense_d435i_configs web_regulators_configurator completed_scripts_jetbot jetbot_mirea_description realsense_ros_gazebo trajectory_maker \
+             nav2_bringup slam_toolbox gazebo_ros rmw_cyclonedds_cpp; do \
+        ros2 pkg prefix "$p" > /dev/null || { echo "ОШИБКА: пакет $p не найден (коммит $(cat /jetbot_ws/COMMIT))"; exit 1; }; \
+    done; echo "Все пакеты на месте"'
 
 # Возвращаем root: entrypoint базового образа стартует от root, подгоняет UID/GID и переходит на ros.
 # /jetbot_ws читается любым UID, поэтому после смены UID пользователя ничего перенастраивать не нужно.

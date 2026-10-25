@@ -4,7 +4,7 @@
 # Образ собирай скриптом ./build_image.sh.
 services:
   extra-humble-amd64-host:
-    image: registry.cookcloud.ru/jetbot_mirea/extra-humble-amd64-host:${VERSION:-v1.0.1}
+    image: registry.cookcloud.ru/jetbot_mirea/extra-humble-amd64-host:${VERSION:-v1.0.2}
     container_name: jetbot-extra-humble-amd64-host
     build:
       context: .

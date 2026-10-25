@@ -1,21 +1,42 @@
 # registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot  (робот jetbot, arm64)
 # Запуск: docker compose up -d ; docker compose exec extra-humble-arm64-robot bash ; docker compose down
 # Сразу запустить драйверы (ESP32, лидар, камера): docker compose --profile bringup up bringup
+#   ENABLE_CAMERA=True, CAMERA_MODE=<пресет>, ENABLE_WEB_CONFIGURATOR=True - в окружении или в .env
 # Версия образа и базы, коммит репозитория, HOST_UID/HOST_GID берутся из .env (./set_host_ids.sh).
 x-robot: &robot
-  image: registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:${VERSION:-v1.0.1}
+  image: registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:${VERSION:-v1.0.2}
   network_mode: host          # DDS-обмен с ПК без NAT
   ipc: host
-  privileged: true            # доступ к /dev (ESP32, лидар, камера) с горячим подключением
+  privileged: true            # все устройства хоста, бывшие на момент старта (камера, USB, I2C)
   runtime: ${DOCKER_RUNTIME:-runc}
   stdin_open: true
   tty: true
   environment:
     HOST_UID: ${HOST_UID:-1000}   # UID/GID пользователя ros = хостовые
     HOST_GID: ${HOST_GID:-1000}
+  # /dev хоста целиком не монтируется. Под постоянными именами пробрасываются порты ESP32
+  # и лидара (by-id: не зависят от порядка подключения) и все 4 видеоустройства D435i
+  # (ls /dev/video* на роботе). Если у другого робота другие адаптеры или камер больше,
+  # поправь пути: ls -l /dev/serial/by-id/
+  devices:
+    - /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0:/dev/esp32
+    - /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0:/dev/rplidar
+    - /dev/video0:/dev/video0
+    - /dev/video1:/dev/video1
+    - /dev/video2:/dev/video2
+    - /dev/video3:/dev/video3
   volumes:
+    # Сокет nvargus-daemon (CSI-камеры Jetson). Должен существовать на хосте, иначе контейнер
+    # не стартует: если CSI-камер нет и демон не запущен, удали этот блок.
+    - type: bind
+      source: /tmp/argus_socket
+      target: /tmp/argus_socket
+      bind:
+        create_host_path: false
     - /run/udev:/run/udev:ro
-    - /dev:/dev
+    # librealsense ищет камеру через USB (в т. ч. IMU и после аппаратного сброса камеры,
+    # когда устройство переподключается): каталог монтируется, чтобы новые узлы были видны
+    - /dev/bus/usb:/dev/bus/usb
     - ./user_data/developer_ws:/home/ros/developer_ws                       # твой код поверх jetbot_ws
     - ./user_data/extra_files_to_container:/home/ros/extra_files_to_container
     - ./user_data/ros2_custom_config_setup:/home/ros/ros2_custom_config_setup
@@ -45,3 +66,5 @@ services:
       - completed_scripts_jetbot
       - jetbot_sensors_and_motors.launch.py
       - enable_front_camera:=${ENABLE_CAMERA:-False}
+      - camera_mode:=${CAMERA_MODE:-rgb_depth_pointcloud}
+      - enable_web_configurator:=${ENABLE_WEB_CONFIGURATOR:-False}

@@ -11,7 +11,9 @@ REPO_COMMIT="${1:-${REPO_COMMIT:-}}"
 BASE_IMAGE="registry.cookcloud.ru/base_images/ros2-base-humble-arm64:${BASE_VERSION}"
 echo "Образ: registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:${VERSION}  база: ${BASE_IMAGE}"
 echo "Репозиторий: ${REPO_URL}  коммит: ${REPO_COMMIT}"
-sudo docker build -t "registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:${VERSION}" \
+
+sudo docker buildx build -t "registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:${VERSION}" \
+    --platform linux/arm64 --load \
     --build-arg BASE_IMAGE="${BASE_IMAGE}" \
     --build-arg REPO_URL="${REPO_URL}" \
     --build-arg REPO_COMMIT="${REPO_COMMIT}" \

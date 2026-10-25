@@ -3,6 +3,21 @@
 Формат: [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/), версии `vMAJOR.MINOR.PATCH`.
 Версия образа хранится в `.env` (`VERSION`).
 
+## [v1.0.2] — 2026-10-25
+
+Образ: `registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:v1.0.2`. База: `registry.cookcloud.ru/base_images/ros2-base-humble-arm64:v1.0.1`.
+
+### Изменено
+- Репозиторий mirea_jetbot_full на коммите `d8f5a6a` (было `5c048a1`): C++-пакеты `serial_bridge_cpp` и `lidar_filter_cpp` вместо Python-пакетов `serial_bridge_package` и `lidar_filter`, `realsense_d435i_configs` вместо `realsense_pkg`, веб-настройщик ПИД `web_regulators_configurator`, одометрия 50 Гц, топик `/low_level/serial/text` с сообщениями прошивки ESP32.
+- Проверка пакетов после сборки обновлена под новый состав: `serial_bridge_cpp`, `lidar_filter_cpp`, `sllidar_ros2`, `realsense_d435i_configs`, `web_regulators_configurator`, `completed_scripts_jetbot`, `jetbot_mirea_description`, `realsense2_camera`, `rmw_cyclonedds_cpp`. Прежняя проверка искала удалённые пакеты.
+- `build_image.sh` собирает через `docker buildx build --platform linux/arm64 --load`: образ можно собрать на ноутбуке amd64 с эмуляцией arm64.
+- `BUILD_JOBS=8` в `.env` (сборка на ноутбуке); `MAKEFLAGS` больше не задаётся. На Nano ставь 2 или 1.
+- `docker-compose.yml`: `/dev` хоста больше не монтируется целиком. Пробрасываются ESP32 и лидар по `/dev/serial/by-id/...` (в контейнере `/dev/esp32` и `/dev/rplidar`), `/dev/video0`–`/dev/video3` камеры D435i, каталог `/dev/bus/usb` (librealsense, переподключение камеры после аппаратного сброса) и сокет `/tmp/argus_socket` (nvargus-daemon).
+- Сервис `bringup` принимает `CAMERA_MODE` (пресет камеры, по умолчанию `rgb_depth_pointcloud`) и `ENABLE_WEB_CONFIGURATOR` (по умолчанию `False`).
+
+### Исправлено
+- Пустая строка внутри `RUN bash -c '...'` со сборкой colcon (docker предупреждал, что пустые строки продолжения станут ошибкой).
+
 ## [v1.0.1] — 2026-10-13
 
 Образ: `registry.cookcloud.ru/jetbot_mirea/extra-humble-arm64-robot:v1.0.1`. База: `registry.cookcloud.ru/base_images/ros2-base-humble-arm64:v1.0.1`.
